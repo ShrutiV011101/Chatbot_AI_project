@@ -1,0 +1,27 @@
+<div class="chat-container">
+  <div class="chat-header">
+    <img src="assets/Icons/robot.png" alt="Bot Icon" class="bot-icon" />
+    <div>
+      <h2>AI Help Assistant</h2>
+      <span>Always here to help</span>
+    </div>
+  </div>
+
+  <div class="chat-body">
+    <div *ngFor="let message of messages" class="chat-message" [ngClass]="message.sender">
+      <img *ngIf="message.sender === 'bot'" src="assets/Icons/robot.png" class="icon" alt="Bot" />
+      <div class="message-bubble">
+        <p>{{ message.text }}</p>
+        <span class="timestamp">{{ message.time }}</span>
+      </div>
+      <img *ngIf="message.sender === 'user'" src="assets/Icons/user.png" class="icon" alt="User" />
+    </div>
+  </div>
+
+  <div class="chat-input">
+    <input [(ngModel)]="userInput" placeholder="Type your message here..." (keydown.enter)="sendMessage()" />
+    <button (click)="sendMessage()">
+      <img src="assets/Icons/arrow.png" alt="Send" />
+    </button>
+  </div>
+</div>
