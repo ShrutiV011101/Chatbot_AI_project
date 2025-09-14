@@ -2,11 +2,17 @@
 
 import { AfterViewInit, Component } from '@angular/core';
 import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 
 interface ChatMessage {
   text: string;
   sender: 'user' | 'bot';
   time: string;
+}
+
+interface ChatResponse {
+  session_id: string;
+  reply: string;
 }
 
 @Component({
@@ -16,7 +22,7 @@ interface ChatMessage {
 })
 export class WidgetComponent{
  
- constructor(private router: Router){
+ constructor(private http: HttpClient){
   console.log('Hello! WidgetComponent component has been loaded.');
 
  }
@@ -29,7 +35,7 @@ messages: ChatMessage[] = [
   ];
 
   userInput: string = '';
-
+  sessionId: string | null = null;
   sendMessage() {
     if (!this.userInput.trim()) return;
 
@@ -40,17 +46,39 @@ messages: ChatMessage[] = [
     };
 
     this.messages.push(userMessage);
-    this.userInput = '';
+    const payload: any = {
+      user_message: userMessage.text,
+      session_id: this.sessionId // send session id if available
+    };
 
-    // Simulate bot reply
-    setTimeout(() => {
-      const botMessage: ChatMessage = {
-        text: 'Our support team is available 24/7 to help you. You can reach us through this chat, email us at support@example.com, or call our helpline.',
-        sender: 'bot',
-        time: this.getCurrentTime()
-      };
-      this.messages.push(botMessage);
-    }, 1000);
+    // Call FastAPI backend
+    this.http.post<ChatResponse>('http://127.0.0.1:8000/chat', payload).subscribe({
+      next: (response) => {
+        // Save session id (first time)
+        if (!this.sessionId) {
+          this.sessionId = response.session_id;
+        }
+
+        const botMessage: ChatMessage = {
+          text: response.reply,
+          sender: 'bot',
+          time: this.getCurrentTime()
+        };
+
+        this.messages.push(botMessage);
+      },
+      error: (err) => {
+        console.error('Chat API error:', err);
+        const botMessage: ChatMessage = {
+          text: "Oops! I couldn't reach the server. Please try again later.",
+          sender: 'bot',
+          time: this.getCurrentTime()
+        };
+        this.messages.push(botMessage);
+      }
+    });
+
+    this.userInput = '';
   }
 
   getCurrentTime(): string {
